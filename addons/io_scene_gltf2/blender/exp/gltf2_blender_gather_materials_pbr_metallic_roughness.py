@@ -20,6 +20,7 @@ from io_scene_gltf2.blender.exp import gltf2_blender_gather_texture_info, gltf2_
 from io_scene_gltf2.blender.exp import gltf2_blender_get
 from io_scene_gltf2.blender.exp.gltf2_blender_gather_cache import cached
 from io_scene_gltf2.io.com.gltf2_io_debug import print_console
+from io_scene_gltf2.io.com.gltf2_io_extensions import Extension
 from io_scene_gltf2.io.exp.gltf2_io_user_extensions import export_user_extensions
 
 
@@ -117,7 +118,64 @@ def __get_tex_from_socket(blender_shader_socket: bpy.types.NodeSocket):
 
 
 def __gather_extensions(blender_material, export_settings):
-    return None
+    if not export_settings['gltf_pbr_next']:
+      return None
+
+    pbrNextExtension = {}
+
+    # clearcoat
+    clearcoat_socket = gltf2_blender_get.get_socket_or_texture_slot(blender_material, "Clearcoat")
+    clearcoatRoughness_socket = gltf2_blender_get.get_socket_or_texture_slot(blender_material, "Clearcoat Roughness")
+    # clearcoatNormal_socket = gltf2_blender_get.get_socket_or_texture_slot(blender_material, "Clearcoat Normal")
+    # clearcoatNormalTexture = gltf2_blender_gather_texture_info.gather_texture_info(clearcoatNormal_socket, export_settings)
+    if isinstance(clearcoat_socket, bpy.types.NodeSocket) and not clearcoat_socket.is_linked:
+        pbrNextExtension['clearcoat'] = clearcoat_socket.default_value
+    if isinstance(clearcoatRoughness_socket, bpy.types.NodeSocket) and not clearcoatRoughness_socket.is_linked:
+        pbrNextExtension['clearcoatRoughness'] = clearcoatRoughness_socket.default_value
+    # if clearcoatNormalTexture:
+    #     pbrNextExtension['clearcoatNormalTexture'] = clearcoatNormalTexture
+
+    # anisotropy
+    anisotropic_socket = gltf2_blender_get.get_socket_or_texture_slot(blender_material, "Anisotropic")
+    anisotropicRotation_socket = gltf2_blender_get.get_socket_or_texture_slot(blender_material, "Anisotropic Rotation")
+    if isinstance(anisotropic_socket, bpy.types.NodeSocket) and not anisotropic_socket.is_linked:
+        pbrNextExtension['anisotropic'] = anisotropic_socket.default_value
+    if isinstance(anisotropicRotation_socket, bpy.types.NodeSocket) and not anisotropicRotation_socket.is_linked:
+        pbrNextExtension['anisotropicRotation'] = anisotropicRotation_socket.default_value
+
+    # sheen
+    sheen_socket = gltf2_blender_get.get_socket_or_texture_slot(blender_material, "Sheen")
+    sheenTint_socket = gltf2_blender_get.get_socket_or_texture_slot(blender_material, "Sheen Tint")
+    if isinstance(sheen_socket, bpy.types.NodeSocket) and not sheen_socket.is_linked:
+        pbrNextExtension['sheen'] = sheen_socket.default_value
+    if isinstance(sheenTint_socket, bpy.types.NodeSocket) and not sheenTint_socket.is_linked:
+        pbrNextExtension['sheenTint'] = sheenTint_socket.default_value
+
+    # subsurface
+    subsurface_socket = gltf2_blender_get.get_socket_or_texture_slot(blender_material, "Subsurface")
+    subsurfaceColor_socket = gltf2_blender_get.get_socket_or_texture_slot(blender_material, "Subsurface Color")
+    subsurfaceRadius_socket = gltf2_blender_get.get_socket_or_texture_slot(blender_material, "Subsurface Radius")
+    if isinstance(subsurface_socket, bpy.types.NodeSocket) and not subsurface_socket.is_linked:
+        pbrNextExtension['subsurface'] = subsurface_socket.default_value
+    if isinstance(subsurfaceColor_socket, bpy.types.NodeSocket) and not subsurfaceColor_socket.is_linked:
+        pbrNextExtension['subsurfaceColor'] = list(subsurfaceColor_socket.default_value)
+    if isinstance(subsurfaceRadius_socket, bpy.types.NodeSocket) and not subsurfaceRadius_socket.is_linked:
+        pbrNextExtension['subsurfaceRadius'] = list(subsurfaceRadius_socket.default_value)
+
+    # transmission
+    ior_socket = gltf2_blender_get.get_socket_or_texture_slot(blender_material, "IOR")
+    transmission_socket = gltf2_blender_get.get_socket_or_texture_slot(blender_material, "Transmission")
+    transmissionRoughness_socket = gltf2_blender_get.get_socket_or_texture_slot(blender_material, "Transmission Roughness")
+    if isinstance(ior_socket, bpy.types.NodeSocket) and not ior_socket.is_linked:
+        pbrNextExtension['ior'] = ior_socket.default_value
+    if isinstance(transmission_socket, bpy.types.NodeSocket) and not transmission_socket.is_linked:
+        pbrNextExtension['transmission'] = transmission_socket.default_value
+    if isinstance(transmissionRoughness_socket, bpy.types.NodeSocket) and not transmissionRoughness_socket.is_linked:
+        pbrNextExtension['transmissionRoughness'] = transmissionRoughness_socket.default_value
+
+    extensions = {}
+    extensions["DRAFT_materials_pbrNext"] = Extension("DRAFT_materials_pbrNext", pbrNextExtension, False)
+    return extensions
 
 
 def __gather_extras(blender_material, export_settings):

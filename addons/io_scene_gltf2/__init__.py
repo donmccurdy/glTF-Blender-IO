@@ -458,6 +458,7 @@ class ExportGLTF2_Base:
 
         export_settings['gltf_lights'] = self.export_lights
         export_settings['gltf_displacement'] = self.export_displacement
+        export_settings['gltf_pbr_next'] = self.export_pbr_next
 
         export_settings['gltf_binary'] = bytearray()
         export_settings['gltf_binaryfilename'] = os.path.splitext(os.path.basename(
