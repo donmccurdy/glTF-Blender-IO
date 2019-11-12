@@ -65,6 +65,7 @@ class DataType:
     Mat2 = "MAT2"
     Mat3 = "MAT3"
     Mat4 = "MAT4"
+    Mat4x3 = "MAT4x3"
 
     def __new__(cls, *args, **kwargs):
         raise RuntimeError("{} should not be instantiated".format(cls.__name__))
@@ -78,6 +79,7 @@ class DataType:
             DataType.Vec4: 4,
             DataType.Mat2: 4,
             DataType.Mat3: 9,
+            DataType.Mat4x3: 12,
             DataType.Mat4: 16
         }[data_type]
 
@@ -99,6 +101,7 @@ class DataType:
         return {
             4: DataType.Mat2,
             9: DataType.Mat3,
+            12: DataType.Mat4x3,
             16: DataType.Mat4
         }[num_elems]
 
@@ -129,3 +132,4 @@ GLTF_DATA_TYPE_VEC4 = "VEC4"
 GLTF_DATA_TYPE_MAT2 = "MAT2"
 GLTF_DATA_TYPE_MAT3 = "MAT3"
 GLTF_DATA_TYPE_MAT4 = "MAT4"
+GLTF_DATA_TYPE_MAT4X3 = "MAT4x3"

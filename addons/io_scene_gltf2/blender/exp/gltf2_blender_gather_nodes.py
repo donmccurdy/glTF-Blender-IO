@@ -14,11 +14,12 @@
 
 import math
 import bpy
-from mathutils import Matrix, Quaternion
+from mathutils import Matrix, Quaternion, Vector
 
 from . import gltf2_blender_export_keys
 from io_scene_gltf2.blender.com import gltf2_blender_math
 from io_scene_gltf2.blender.exp.gltf2_blender_gather_cache import cached
+from io_scene_gltf2.blender.exp import gltf2_blender_gather_accessors
 from io_scene_gltf2.blender.exp import gltf2_blender_gather_skins
 from io_scene_gltf2.blender.exp import gltf2_blender_gather_cameras
 from io_scene_gltf2.blender.exp import gltf2_blender_gather_mesh
@@ -27,7 +28,9 @@ from io_scene_gltf2.blender.exp import gltf2_blender_extract
 from io_scene_gltf2.blender.exp import gltf2_blender_gather_lights
 from ..com.gltf2_blender_extras import generate_extras
 from io_scene_gltf2.io.com import gltf2_io
+from io_scene_gltf2.io.com import gltf2_io_constants
 from io_scene_gltf2.io.com import gltf2_io_extensions
+from io_scene_gltf2.io.exp import gltf2_io_binary_data
 
 
 def gather_node(blender_object, blender_scene, export_settings):
@@ -209,6 +212,7 @@ def __gather_children(blender_object, blender_scene, export_settings):
 def __gather_extensions(blender_object, export_settings):
     extensions = {}
 
+    # KHR_lights_punctual
     if export_settings["gltf_lights"] and (blender_object.type == "LAMP" or blender_object.type == "LIGHT"):
         blender_lamp = blender_object.data
         light = gltf2_blender_gather_lights.gather_lights_punctual(
@@ -228,6 +232,65 @@ def __gather_extensions(blender_object, export_settings):
                 }
             )
 
+    # KHR_instancing
+    if export_settings["gltf_instancing"] and len(blender_object.particle_systems):
+        deps_graph = bpy.context.evaluated_depsgraph_get()
+        particle_system = blender_object.evaluated_get(deps_graph).particle_systems[0]
+        particle_settings = particle_system.settings
+
+        # Accept only particle systems rendering a single mesh, for compatibility with
+        # the KHR_instancing (GPU instancing) extension.
+        if particle_settings.render_type == "OBJECT" and particle_settings.instance_object.type == "MESH":
+            mesh = particle_settings.instance_object
+            particles = particle_system.particles
+
+            # locations = [0] * (3 * particle_settings.count)
+            # rotations = [0] * (4 * particle_settings.count)
+            # sizes = [0] * (3 * particle_settings.count)
+            # particles.foreach_get("location", locations)
+            # particles.foreach_get("rotation", rotations)
+            # particles.foreach_get("size", sizes)
+
+            transforms = []
+            for p in particles:
+                loc = Matrix.Translation(p.location)
+                rot = p.rotation.to_matrix().to_4x4()
+                sca = Matrix.Scale(p.size, 4)
+                mat = loc @ rot @ sca
+                mat4x3 = list(mat[0:4][0]) + list(mat[0:4][1]) + list(mat[0:4][2])
+                print("THIS IS A TEST PRINT")
+                print(str(mat4x3))
+                transforms += mat4x3
+
+            print("TRANSFORMS count: " + str(particle_settings.count))
+            print("TRANSFORMS length: " + str(len(transforms)))
+
+            transforms_accessor = gltf2_blender_gather_accessors.gather_accessor(
+                gltf2_io_binary_data.BinaryData.from_list(transforms, gltf2_io_constants.ComponentType.Float),
+                gltf2_io_constants.ComponentType.Float,
+                particle_settings.count,
+                None,
+                None,
+                gltf2_io_constants.DataType.Mat4x3,
+                export_settings
+            )
+
+            print("BEGIN __gather_mesh")
+            mesh = __gather_mesh(particle_settings.instance_object, export_settings)
+            print("END __gather_mesh")
+
+            print("MESH: " + str(mesh))
+
+            extensions["KHR_instancing"] = gltf2_io_extensions.Extension(
+                name="KHR_instancing",
+                extension={
+                    "mesh": mesh,
+                    "attributes": {
+                        "TRANSFORM": transforms_accessor
+                    }
+                }
+            )
+
     return extensions if extensions else None
 
 
@@ -244,6 +307,7 @@ def __gather_matrix(blender_object, export_settings):
 
 def __gather_mesh(blender_object, export_settings):
     if blender_object.type != "MESH":
+        print("OH NOES NOT A MESH??? " + blender_object.type)
         return None
 
     modifier_normal_types = [

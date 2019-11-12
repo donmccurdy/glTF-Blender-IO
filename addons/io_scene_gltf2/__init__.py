@@ -306,6 +306,14 @@ class ExportGLTF2_Base:
         default=False
     )
 
+    export_instancing = BoolProperty(
+        name='Particle Systems',
+        description='EXPERIMENTAL: Exports particle systems, without animation. Supports particle systems '
+                    'configured with "Render As: Object", where the Instance Object is a single mesh. '
+                    'Uses "KHR_instancing" glTF extension',
+        default=True
+    )
+
     export_displacement = BoolProperty(
         name='Displacement Textures (EXPERIMENTAL)',
         description='EXPERIMENTAL: Export displacement textures. '
@@ -423,6 +431,7 @@ class ExportGLTF2_Base:
             export_settings['gltf_morph_tangent'] = False
 
         export_settings['gltf_lights'] = self.export_lights
+        export_settings['gltf_instancing'] = self.export_instancing
         export_settings['gltf_displacement'] = self.export_displacement
 
         export_settings['gltf_binary'] = bytearray()
@@ -480,6 +489,7 @@ class ExportGLTF2_Base:
             col = self.layout.box().column()
             col.prop(self, 'export_cameras')
             col.prop(self, 'export_lights')
+            col.prop(self, 'export_instancing')
 
         def draw_animation_settings(self):
             col = self.layout.box().column()
@@ -557,6 +567,7 @@ class GLTF_PT_export_include(bpy.types.Panel):
         layout.prop(operator, 'export_extras')
         layout.prop(operator, 'export_cameras')
         layout.prop(operator, 'export_lights')
+        layout.prop(operator, 'export_instancing')
 
 
 class GLTF_PT_export_transform(bpy.types.Panel):
