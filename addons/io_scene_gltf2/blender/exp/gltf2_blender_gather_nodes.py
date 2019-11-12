@@ -244,13 +244,6 @@ def __gather_extensions(blender_object, export_settings):
             mesh = particle_settings.instance_object
             particles = particle_system.particles
 
-            # locations = [0] * (3 * particle_settings.count)
-            # rotations = [0] * (4 * particle_settings.count)
-            # sizes = [0] * (3 * particle_settings.count)
-            # particles.foreach_get("location", locations)
-            # particles.foreach_get("rotation", rotations)
-            # particles.foreach_get("size", sizes)
-
             transforms = []
             for p in particles:
                 loc = Matrix.Translation(p.location)
@@ -258,12 +251,7 @@ def __gather_extensions(blender_object, export_settings):
                 sca = Matrix.Scale(p.size, 4)
                 mat = loc @ rot @ sca
                 mat4x3 = list(mat[0:4][0]) + list(mat[0:4][1]) + list(mat[0:4][2])
-                print("THIS IS A TEST PRINT")
-                print(str(mat4x3))
                 transforms += mat4x3
-
-            print("TRANSFORMS count: " + str(particle_settings.count))
-            print("TRANSFORMS length: " + str(len(transforms)))
 
             transforms_accessor = gltf2_blender_gather_accessors.gather_accessor(
                 gltf2_io_binary_data.BinaryData.from_list(transforms, gltf2_io_constants.ComponentType.Float),
@@ -307,7 +295,6 @@ def __gather_matrix(blender_object, export_settings):
 
 def __gather_mesh(blender_object, export_settings):
     if blender_object.type != "MESH":
-        print("OH NOES NOT A MESH??? " + blender_object.type)
         return None
 
     modifier_normal_types = [
