@@ -328,6 +328,12 @@ class ExportGLTF2_Base:
         default=False
     )
 
+    export_pbr_next = BoolProperty(
+        name='Advanced PBR (EXPERIMENTAL)',
+        description='EXPERIMENTAL: Export advanced PBR properties.',
+        default=False
+    )
+
     will_save_settings = BoolProperty(
         name='Remember Export Settings',
         description='Store glTF export settings in the Blender project',
@@ -618,6 +624,7 @@ class GLTF_PT_export_include(bpy.types.Panel):
         layout.prop(operator, 'export_extras')
         layout.prop(operator, 'export_cameras')
         layout.prop(operator, 'export_lights')
+        layout.prop(operator, 'export_pbr_next')
 
 
 class GLTF_PT_export_transform(bpy.types.Panel):
