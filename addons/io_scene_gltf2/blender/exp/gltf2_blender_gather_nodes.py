@@ -249,7 +249,9 @@ def __gather_extensions(blender_object, export_settings):
                 loc = Matrix.Translation(p.location)
                 rot = p.rotation.to_matrix().to_4x4()
                 sca = Matrix.Scale(p.size, 4)
-                mat = loc @ rot @ sca
+                mat = loc
+                # mat = loc @ rot @ sca
+                # mat4x3 = list(mat.col[0])[0:3] + list(mat.col[1])[0:3]  + list(mat.col[2])[0:3] + list(mat.col[3])[0:3]
                 mat4x3 = list(mat[0:4][0]) + list(mat[0:4][1]) + list(mat[0:4][2])
                 transforms += mat4x3
 
@@ -363,6 +365,9 @@ def __gather_mesh(blender_object, export_settings):
         for idx, modifier in enumerate(blender_object.modifiers):
             if modifier.type == 'ARMATURE':
                 blender_object_for_skined_data = blender_object
+
+    if blender_object.is_evaluated:
+        skip_filter = True
 
     result = gltf2_blender_gather_mesh.gather_mesh(blender_mesh,
                                                    blender_object_for_skined_data,
