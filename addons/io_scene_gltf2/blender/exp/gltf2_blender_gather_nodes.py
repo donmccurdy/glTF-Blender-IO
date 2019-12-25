@@ -85,8 +85,13 @@ def __gather_node(blender_object, blender_scene, export_settings):
         if blender_object.type == 'CAMERA' and export_settings[gltf2_blender_export_keys.CAMERAS]:
             correction_node = __get_correction_node(blender_object, export_settings)
             correction_node.camera = node.camera
+            node.camera = None
             node.children.append(correction_node)
-        node.camera = None
+        if node.extensions and "KHR_instancing" in node.extensions:
+            correction_node = __get_correction_node(blender_object, export_settings)
+            correction_node.extensions = {"KHR_instancing": node.extensions["KHR_instancing"]}
+            del node.extensions["KHR_instancing"]
+            node.children.append(correction_node)
 
     return node
 
@@ -249,9 +254,7 @@ def __gather_extensions(blender_object, export_settings):
                 loc = Matrix.Translation(p.location)
                 rot = p.rotation.to_matrix().to_4x4()
                 sca = Matrix.Scale(p.size, 4)
-                mat = loc
-                # mat = loc @ rot @ sca
-                # mat4x3 = list(mat.col[0])[0:3] + list(mat.col[1])[0:3]  + list(mat.col[2])[0:3] + list(mat.col[3])[0:3]
+                mat = loc @ rot @ sca
                 mat4x3 = list(mat[0:4][0]) + list(mat[0:4][1]) + list(mat[0:4][2])
                 transforms += mat4x3
 
@@ -265,16 +268,10 @@ def __gather_extensions(blender_object, export_settings):
                 export_settings
             )
 
-            print("BEGIN __gather_mesh")
-            mesh = __gather_mesh(particle_settings.instance_object, export_settings)
-            print("END __gather_mesh")
-
-            print("MESH: " + str(mesh))
-
             extensions["KHR_instancing"] = gltf2_io_extensions.Extension(
                 name="KHR_instancing",
                 extension={
-                    "mesh": mesh,
+                    "mesh": __gather_mesh(particle_settings.instance_object, export_settings),
                     "attributes": {
                         "TRANSFORM": transforms_accessor
                     }
