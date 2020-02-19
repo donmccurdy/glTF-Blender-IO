@@ -238,6 +238,13 @@ def __gather_extensions(blender_object, export_settings):
             )
 
     # KHR_instancing
+    #
+    # TODO(donmccurdy):
+    # - Can we access particles' index and value properties? Not finding it so far.
+    # - Document the export steps, what's supported and what isn't.
+    # - This might, easily, be the wrong workflow. Should we be supporting instancing
+    #   as an option for distributed Blender mesh instances in a scene, instead? Or
+    #   let gltfpack do that? Or just if instances have a common parent?
     if export_settings["gltf_instancing"] and len(blender_object.particle_systems):
         deps_graph = bpy.context.evaluated_depsgraph_get()
         particle_system = blender_object.evaluated_get(deps_graph).particle_systems[0]
