@@ -163,6 +163,12 @@ def __gather_extensions(blender_material, export_settings):
     if clearcoat_extension:
         extensions["KHR_materials_clearcoat"] = clearcoat_extension
 
+    # KHR_materials_sheen
+
+    sheen_extension = __gather_sheen_extension(blender_material, export_settings)
+    if sheen_extension:
+        extensions["KHR_materials_sheen"] = sheen_extension
+
     # KHR_materials_transmission
 
     transmission_extension = __gather_transmission_extension(blender_material, export_settings)
@@ -316,6 +322,34 @@ def __gather_clearcoat_extension(blender_material, export_settings):
         )
 
     return Extension('KHR_materials_clearcoat', clearcoat_extension, False)
+
+def __gather_sheen_extension(blender_material, export_settings):
+    sheen_enabled = False
+    sheen_extension = {}
+
+    sheen_socket = gltf2_blender_get.get_socket(blender_material, 'Sheen')
+    sheen_tint_socket = gltf2_blender_get.get_socket(blender_material, 'Sheen Tint')
+    base_color_socket = gltf2_blender_get.get_socket(blender_material, 'Base Color')
+    if (isinstance(sheen_socket, bpy.types.NodeSocket)
+            and isinstance(sheen_tint_socket, bpy.types.NodeSocket)
+            and isinstance(base_color_socket, bpy.types.NodeSocket)):
+        sheen = gltf2_blender_get.get_factor_from_socket(sheen_socket, 'VALUE') or 0
+        tint = gltf2_blender_get.get_factor_from_socket(sheen_tint_socket, 'VALUE') or 0
+        base_color = gltf2_blender_get.get_factor_from_socket(base_color_socket, 'RGB') or [1, 1, 1]
+        sheen_extension['sheenColorFactor'] = [
+            sheen * ((1 - tint) + (tint * base_color[0])),
+            sheen * ((1 - tint) + (tint * base_color[1])),
+            sheen * ((1 - tint) + (tint * base_color[2]))
+        ]
+
+    if not any(sheen_extension['sheenColorFactor']):
+        return None
+
+    roughness_socket = gltf2_blender_get.get_socket(blender_material, 'Roughness')
+    if isinstance(roughness_socket, bpy.types.NodeSocket) and not roughness_socket.is_linked:
+        sheen_extension['sheenRoughnessFactor'] = gltf2_blender_get.get_factor_from_socket(roughness_socket, 'VALUE')
+
+    return Extension('KHR_materials_sheen', sheen_extension, False)
 
 def __gather_transmission_extension(blender_material, export_settings):
     transmission_enabled = False
